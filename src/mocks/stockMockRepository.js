@@ -1,5 +1,5 @@
 import { mockPickingOrders } from "./pickingMockData.js";
-import { mockReceivingNotes, mockSecondaryStockItems, mockStockItems, mockStockLocations, stockProducts } from "./mockData.js";
+import { mockPendingStockTransfers, mockReceivingNotes, mockSecondaryStockItems, mockStockItems, mockStockLocations, stockProducts } from "./mockData.js";
 import { createMockStorage } from "./mockStorage.js";
 import { DEFAULT_WAREHOUSE_ID } from "../shared/utils/warehouseCatalog.js";
 
@@ -36,6 +36,17 @@ const createInitialProducts = () => {
     .filter((product) => !secondarySkus.has(product.sku))
     .forEach((product) => upsert({ ...product, warehouseId: DEFAULT_WAREHOUSE_ID }));
   mockSecondaryStockItems.forEach((product) => upsert({ ...product, warehouseId: "288" }));
+  mockPendingStockTransfers.forEach((transfer) => {
+    const productKey = `${transfer.fromWarehouseId}:${transfer.sku}`;
+    const current = products.get(productKey);
+    if (!current) return;
+
+    products.set(productKey, {
+      ...current,
+      quantity: Math.max(0, Number(current.quantity || 0) - Number(transfer.quantity || 0)),
+      transferPendingQty: Number(current.transferPendingQty || 0) + Number(transfer.quantity || 0),
+    });
+  });
 
   mockReceivingNotes.forEach((note) => {
     note.items.forEach((item) => {
@@ -60,7 +71,7 @@ const createInitialProducts = () => {
   }));
 };
 
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const storage = createMockStorage({
   key: STORAGE_KEY,
   version: STORAGE_VERSION,

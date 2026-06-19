@@ -38,6 +38,7 @@ export const mockPickingOrders = [
     id: "ORD-1006", marketplace: "Site", customer: "Cliente Transferencia", carrier: "Correios",
     items: [
       { id: "PK-11", sku: "FRITADEIRA-5L-PR", ean: "7894000000001", productName: "Fritadeira Eletrica 5L Preta", locationCode: "288-A1", requiredQty: 3, pickedQty: 0, stockQty: 18, packagingType: "Caixa media", suggestedZone: "Area Volumosos", status: "aguardando_separacao" },
+      { id: "PK-12", sku: "LIQUID-1200-INOX", ean: "7894000000002", productName: "Liquidificador 1200W Inox", locationCode: "288-A2", requiredQty: 4, pickedQty: 0, stockQty: 24, packagingType: "Caixa media", suggestedZone: "Area Volumosos", status: "aguardando_separacao" },
     ],
   },
 ];

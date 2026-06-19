@@ -1,16 +1,25 @@
 import { createMockStorage } from "./mockStorage.js";
+import { mockPendingStockTransfers } from "./mockData.js";
 import { getWarehouseLabel } from "../shared/utils/warehouseCatalog.js";
 import { wmsMockRepository } from "./wmsMockRepository.js";
 import { stockMockRepository } from "./stockMockRepository.js";
 
 const STORAGE_KEY = "wms_transfer_database_v1";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
+
+const createInitialTransfers = () => mockPendingStockTransfers.map((transfer) => ({
+  ...transfer,
+  status: "pendente",
+  fromWarehouseName: getWarehouseLabel(transfer.fromWarehouseId),
+  toWarehouseName: getWarehouseLabel(transfer.toWarehouseId),
+  confirmedAt: null,
+}));
 
 const storage = createMockStorage({
   key: STORAGE_KEY,
   version: STORAGE_VERSION,
   eventName: "wms-transfer-change",
-  createInitial: () => ({ version: STORAGE_VERSION, transfers: [] }),
+  createInitial: () => ({ version: STORAGE_VERSION, transfers: createInitialTransfers() }),
 });
 
 const { clone, write, reset } = storage;

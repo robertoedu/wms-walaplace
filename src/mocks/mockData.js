@@ -409,3 +409,30 @@ export const mockSecondaryStockItems = [
   { id: '288-4', sku: 'JOGO-TALHER-24', ean: '7894000000004', description: 'Jogo de Talheres Inox 24 Pecas', currentLocation: '288-B2', quantity: 50, packagingType: 'Caixa pequena', status: 'aguardando_separacao' },
   { id: '288-5', sku: 'TOALHA-BANHO-AZ', ean: '7894000000005', description: 'Toalha de Banho Azul Algodao', currentLocation: '288-C1', quantity: 80, packagingType: 'Fardo', status: 'aguardando_separacao' },
 ];
+
+export const mockPendingStockTransfers = [
+  {
+    id: 'TRF-MOCK-288-742-001',
+    sku: 'FRITADEIRA-5L-PR',
+    description: 'Fritadeira Eletrica 5L Preta',
+    ean: '7894000000001',
+    quantity: 3,
+    sourceProductId: '288-1',
+    sourceLocation: '288-A1',
+    fromWarehouseId: '288',
+    toWarehouseId: '742',
+    createdAt: '2026-06-19T09:00:00Z',
+  },
+  {
+    id: 'TRF-MOCK-288-742-002',
+    sku: 'LIQUID-1200-INOX',
+    description: 'Liquidificador 1200W Inox',
+    ean: '7894000000002',
+    quantity: 4,
+    sourceProductId: '288-2',
+    sourceLocation: '288-A2',
+    fromWarehouseId: '288',
+    toWarehouseId: '742',
+    createdAt: '2026-06-19T09:10:00Z',
+  },
+];

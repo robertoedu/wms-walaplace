@@ -6,7 +6,7 @@ import { wmsMockRepository } from "./wmsMockRepository.js";
 import { DEFAULT_WAREHOUSE_ID, SUPPORT_WAREHOUSE_ID } from "../shared/utils/warehouseCatalog.js";
 
 const STORAGE_KEY = "wms_picking_database_v5";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 const PICKING_WAREHOUSE_ID = DEFAULT_WAREHOUSE_ID;
 const now = () => new Date().toISOString();
 const storage = createMockStorage({
