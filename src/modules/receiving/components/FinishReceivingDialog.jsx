@@ -16,13 +16,13 @@ import { ReceivingItemsTable } from "./ReceivingItemsTable";
 import { receivingProblemStatusOptions } from "../../../shared/utils/statusCatalog";
 
 const getInitialForm = (note) => {
-  const noteHasProblem =
-    note?.status === "incompleta" || note?.status === "divergente";
+  const finalStatus = note?.computedStatus || note?.status;
+  const noteHasProblem = finalStatus === "incompleta" || finalStatus === "divergente";
 
   return {
     hasProblem: noteHasProblem ? "sim" : "nao",
     observation: note?.observation || "",
-    status: noteHasProblem ? note.status : "incompleta",
+    status: noteHasProblem ? finalStatus : "incompleta",
   };
 };
 
@@ -32,8 +32,12 @@ const FinishReceivingContent = ({ note, onClose, onConfirm }) => {
 
   const totals = useMemo(() => ({
     skus: note.items.length,
-    units: note.items.reduce(
-      (sum, item) => sum + Number(item.quantity || 0),
+    issuedUnits: note.items.reduce(
+      (sum, item) => sum + Number(item.issuedQty ?? item.quantity ?? 0),
+      0,
+    ),
+    receivedUnits: note.items.reduce(
+      (sum, item) => sum + Number(item.receivedQty ?? item.quantity ?? 0),
       0,
     ),
   }), [note]);
@@ -55,8 +59,7 @@ const FinishReceivingContent = ({ note, onClose, onConfirm }) => {
         <Stack spacing={3} sx={{ mt: 1 }}>
           <ReceivingItemsTable
             items={note.items}
-            onEditItem={() => {}}
-            onRemoveItem={() => {}}
+            mode={note.isConference ? "conference" : "manual"}
           />
 
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
@@ -64,7 +67,10 @@ const FinishReceivingContent = ({ note, onClose, onConfirm }) => {
               <strong>Total de SKUs:</strong> {totals.skus}
             </Box>
             <Box>
-              <strong>Total de unidades:</strong> {totals.units}
+              <strong>Total emitido:</strong> {totals.issuedUnits}
+            </Box>
+            <Box>
+              <strong>Total recebido:</strong> {totals.receivedUnits}
             </Box>
             <Box>
               <strong>Data/hora:</strong> {new Date().toLocaleString("pt-BR")}

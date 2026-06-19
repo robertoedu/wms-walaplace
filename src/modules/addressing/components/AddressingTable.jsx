@@ -6,6 +6,7 @@ import { useState } from "react";
 import { StockStatusChip } from "./StockStatusChip";
 import { ReceivingStatusChip } from "../../receiving/components/ReceivingStatusChip";
 import { canAddressStockItem } from "../../../shared/utils/statusCatalog";
+import { getWarehouseLabel } from "../../../shared/utils/warehouseCatalog";
 
 const formatDate = (value) => value
   ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value))
@@ -52,14 +53,14 @@ export const AddressingTable = ({
                   <Checkbox checked={allVisibleSelected} onChange={toggleAllVisible} />
                 </TableCell>
               )}
-              {["Ordem/NF", "SKU", "EAN", "Produto", "Recebido", "Endereçado", "Pendente", "Endereçamento", "Recebimento", "Local atual", "Última atualização", "Ações"].map((label) => (
+              {["Ordem/NF", "Estoque", "SKU", "EAN", "Produto", "Recebido", "Endereçado", "Pendente", "Endereçamento", "Recebimento", "Local atual", "Última atualização", "Ações"].map((label) => (
                 <TableCell key={label} sx={{ fontWeight: 700 }}>{label}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {visibleRows.length === 0 ? (
-              <TableRow><TableCell colSpan={onSelectionChange ? 13 : 12}><Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>Nenhum produto encontrado para endereçamento.</Box></TableCell></TableRow>
+              <TableRow><TableCell colSpan={onSelectionChange ? 14 : 13}><Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>Nenhum produto encontrado para endereçamento.</Box></TableCell></TableRow>
             ) : visibleRows.map((row) => (
               <TableRow key={row.id} hover>
                 {onSelectionChange && (
@@ -76,6 +77,7 @@ export const AddressingTable = ({
                   </TableCell>
                 )}
                 <TableCell>{row.orderCode}</TableCell>
+                <TableCell>{row.warehouseName || getWarehouseLabel(row.warehouseId)}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{row.sku}</TableCell>
                 <TableCell>{row.ean}</TableCell>
                 <TableCell>{row.productName}</TableCell>

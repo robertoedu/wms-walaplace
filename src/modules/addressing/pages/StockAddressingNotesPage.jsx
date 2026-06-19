@@ -8,12 +8,14 @@ import { AddressingNotesTable } from "../components/AddressingNotesTable";
 import { addressingService } from "../services/addressingService";
 import { addressingNoteNeedsAttention } from "../../../shared/utils/processAttention";
 import { addressingNoteStatusFilterOptions } from "../../../shared/utils/statusCatalog";
+import { WAREHOUSES } from "../../../shared/utils/warehouseCatalog";
 
 export const StockAddressingNotesPage = () => {
   const navigate = useNavigate();
   const [notes, setNotes] = useState(() => addressingService.listNotes());
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("attention");
+  const [warehouseId, setWarehouseId] = useState("all");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -27,9 +29,12 @@ export const StockAddressingNotesPage = () => {
         note.receivingStatus === status;
       const matchesSearch = !term || [note.noteNumber, note.orderCode, note.supplier, ...note.items.flatMap((item) => [item.sku, item.ean, item.productName])]
         .some((value) => String(value || "").toLowerCase().includes(term));
-      return matchesStatus && matchesSearch;
+      const matchesWarehouse =
+        warehouseId === "all" ||
+        String(note.warehouseId || "742") === warehouseId;
+      return matchesStatus && matchesWarehouse && matchesSearch;
     });
-  }, [notes, search, status]);
+  }, [notes, search, status, warehouseId]);
 
   const cards = [
     ["Notas aguardando", notes.filter((note) => note.addressingStatus === "aguardando_enderecamento").length],
@@ -58,6 +63,12 @@ export const StockAddressingNotesPage = () => {
             <TextField select label="Status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }} sx={{ minWidth: 230 }}>
               {addressingNoteStatusFilterOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </TextField>
+            <TextField select label="Estoque" value={warehouseId} onChange={(event) => { setWarehouseId(event.target.value); setPage(0); }} sx={{ minWidth: 230 }}>
+              <MenuItem value="all">Todos os estoques</MenuItem>
+              {WAREHOUSES.map((warehouse) => (
+                <MenuItem key={warehouse.id} value={warehouse.id}>{warehouse.label}</MenuItem>
               ))}
             </TextField>
             <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => setNotes(addressingService.listNotes())}>Atualizar</Button>

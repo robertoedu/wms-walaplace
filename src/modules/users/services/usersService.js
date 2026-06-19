@@ -1,5 +1,6 @@
-import { mockUsers, userRoles } from "../../../mocks/mockData";
-import { modulesService } from "../../../shared/services/modulesService";
+import { userRoles } from "../../../mocks/mockData.js";
+import { usersMockRepository } from "../../../mocks/usersMockRepository.js";
+import { modulesService } from "../../../shared/services/modulesService.js";
 
 const cloneUser = (user) => ({
   ...user,
@@ -7,7 +8,8 @@ const cloneUser = (user) => ({
 });
 
 export const usersService = {
-  listUsers: () => mockUsers.map(cloneUser),
+  listUsers: () => usersMockRepository.listUsers().map(cloneUser),
   listRoles: () => userRoles.map((role) => ({ ...role })),
   listModules: () => modulesService.listModules(),
+  saveUser: (user) => cloneUser(usersMockRepository.saveUser(user)),
 };

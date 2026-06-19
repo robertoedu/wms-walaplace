@@ -14,6 +14,7 @@ export const StockSummaryCards = ({ summary }) => {
   const cards = [
     { label: "Total de produtos", value: summary.totalProducts },
     { label: "Quantidade total em estoque", value: summary.totalQuantity },
+    { label: "Quantidade em transferencia", value: summary.transferPendingQuantity || 0 },
     { label: "Produtos com baixo estoque", value: summary.lowStock },
   ];
 

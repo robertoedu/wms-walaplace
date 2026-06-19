@@ -1,4 +1,4 @@
-import { mockUsers } from "../../mocks/mockData";
+import { usersMockRepository } from "../../mocks/usersMockRepository.js";
 
 const withoutPassword = (user) => {
   const { password, ...safeUser } = user;
@@ -8,9 +8,7 @@ const withoutPassword = (user) => {
 
 export const authService = {
   login: (username, password) => {
-    const foundUser = mockUsers.find(
-      (user) => user.username === username && user.password === password,
-    );
+    const foundUser = usersMockRepository.findByCredentials(username, password);
 
     if (!foundUser) {
       return { success: false, message: "Usuário ou senha inválidos" };

@@ -18,6 +18,8 @@ const formatDate = (value) =>
     timeStyle: "short",
   }).format(new Date(value));
 
+const getNoteDate = (note) => note.issuedAt || note.emittedAt || note.createdAt;
+
 export const ReceivingTable = ({
   notes,
   page,
@@ -47,7 +49,7 @@ export const ReceivingTable = ({
             <TableCell sx={{ fontWeight: "bold" }}>Nota</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Itens</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Data</TableCell>
+            <TableCell sx={{ fontWeight: "bold" }}>Emissão</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Ações</TableCell>
           </TableRow>
         </TableHead>
@@ -67,7 +69,14 @@ export const ReceivingTable = ({
               <TableRow key={note.id} hover>
                 <TableCell>
                   <Stack spacing={0.5}>
-                    <Box sx={{ fontWeight: 600 }}>{note.key}</Box>
+                    <Box sx={{ fontWeight: 600 }}>
+                      {note.nfeNumber || note.key}
+                    </Box>
+                    {note.nfeNumber && (
+                      <Box sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
+                        Previsão {note.key}
+                      </Box>
+                    )}
                     <Box sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
                       {note.supplier}
                     </Box>
@@ -77,24 +86,25 @@ export const ReceivingTable = ({
                 <TableCell>
                   <ReceivingStatusChip status={note.status} />
                 </TableCell>
-                <TableCell>{formatDate(note.createdAt)}</TableCell>
+                <TableCell>{formatDate(getNoteDate(note))}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => onViewItems(note)}
-                    >
-                      Ver itens
-                    </Button>
-                    {(note.status === "incompleta" ||
-                      note.status === "divergente") && (
+                    {note.status !== "prevista" && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => onViewItems(note)}
+                      >
+                        Ver itens
+                      </Button>
+                    )}
+                    {["prevista", "incompleta", "divergente"].includes(note.status) && (
                       <Button
                         variant="contained"
                         size="small"
                         onClick={() => onEditNote(note)}
                       >
-                        Editar
+                        {note.status === "prevista" ? "Conferir" : "Editar"}
                       </Button>
                     )}
                   </Stack>

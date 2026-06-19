@@ -10,6 +10,41 @@ import { receivingService } from "../services/receivingService";
 import { receivingNoteNeedsAttention } from "../../../shared/utils/processAttention";
 import { readReceivingFilters, writeReceivingFilters } from "../utils/receivingFilters";
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const startOfDay = (date) => {
+  const nextDate = new Date(date);
+  nextDate.setHours(0, 0, 0, 0);
+  return nextDate;
+};
+
+const endOfDay = (date) => {
+  const nextDate = new Date(date);
+  nextDate.setHours(23, 59, 59, 999);
+  return nextDate;
+};
+
+const getNoteIssueDate = (note) =>
+  new Date(note.issuedAt || note.emittedAt || note.createdAt);
+
+const isDefaultExpectedWindow = (note, referenceDate = new Date()) => {
+  const issuedAt = getNoteIssueDate(note);
+  const windowStart = startOfDay(new Date(referenceDate.getTime() - 30 * DAY_IN_MS));
+  const windowEnd = endOfDay(referenceDate);
+
+  return issuedAt >= windowStart && issuedAt <= windowEnd;
+};
+
+const matchesDateRange = (note, dateStart, dateEnd) => {
+  if (!dateStart && !dateEnd) return isDefaultExpectedWindow(note);
+
+  const issuedAt = getNoteIssueDate(note);
+  const start = dateStart ? startOfDay(new Date(`${dateStart}T00:00:00`)) : null;
+  const end = dateEnd ? endOfDay(new Date(`${dateEnd}T00:00:00`)) : null;
+
+  return (!start || issuedAt >= start) && (!end || issuedAt <= end);
+};
+
 export const ReceivingNotesPage = () => {
   const [notes, setNotes] = useState(() => receivingService.listNotes());
   const [stockProducts, setStockProducts] = useState(() =>
@@ -17,7 +52,9 @@ export const ReceivingNotesPage = () => {
   );
   const savedFilters = readReceivingFilters();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState(savedFilters.status || "attention");
+  const [status, setStatus] = useState(savedFilters.status || "prevista");
+  const [dateStart, setDateStart] = useState(savedFilters.dateStart || "");
+  const [dateEnd, setDateEnd] = useState(savedFilters.dateEnd || "");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
@@ -38,10 +75,12 @@ export const ReceivingNotesPage = () => {
         status === "all" ||
         (status === "attention" && receivingNoteNeedsAttention(note)) ||
         note.status === status;
+      const matchesPeriod = matchesDateRange(note, dateStart, dateEnd);
       const matchesSearch = !term
         ? true
         : [
             note.key,
+            note.nfeNumber,
             ...(note.items || []).flatMap((item) => [
               item.sku,
               item.description,
@@ -51,9 +90,9 @@ export const ReceivingNotesPage = () => {
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(term));
 
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesPeriod && matchesSearch;
     });
-  }, [notes, search, status]);
+  }, [dateEnd, dateStart, notes, search, status]);
 
   const summary = useMemo(() => {
     const today = new Date().toDateString();
@@ -111,7 +150,19 @@ export const ReceivingNotesPage = () => {
   const handleStatusChange = (value) => {
     setStatus(value);
     setPage(0);
-    writeReceivingFilters({ status: value });
+    writeReceivingFilters({ status: value, dateStart, dateEnd });
+  };
+
+  const handleDateStartChange = (value) => {
+    setDateStart(value);
+    setPage(0);
+    writeReceivingFilters({ status, dateStart: value, dateEnd });
+  };
+
+  const handleDateEndChange = (value) => {
+    setDateEnd(value);
+    setPage(0);
+    writeReceivingFilters({ status, dateStart, dateEnd: value });
   };
 
   return (
@@ -133,8 +184,12 @@ export const ReceivingNotesPage = () => {
         <ReceivingFilters
           search={search}
           status={status}
+          dateStart={dateStart}
+          dateEnd={dateEnd}
           onSearchChange={handleSearchChange}
           onStatusChange={handleStatusChange}
+          onDateStartChange={handleDateStartChange}
+          onDateEndChange={handleDateEndChange}
           onRefresh={() => setNotes((prev) => [...prev])}
           onAddNote={() => setCreateOpen(true)}
         />

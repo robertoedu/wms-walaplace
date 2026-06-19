@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@mui/material";
 import { StockStatusChip } from "./StockStatusChip";
+import { getWarehouseLabel } from "../../../shared/utils/warehouseCatalog";
 
 export const StockTable = ({
   products,
@@ -19,6 +20,8 @@ export const StockTable = ({
   onPageChange,
   onRowsPerPageChange,
   onEdit,
+  onMoveLocation,
+  onTransferWarehouse,
 }) => {
   const visibleRows = products.slice(
     page * rowsPerPage,
@@ -35,9 +38,11 @@ export const StockTable = ({
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 700 }}>Descrição</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Estoque</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>SKU</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>EAN</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Quantidade</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Disponivel</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Em transferencia</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>Localização</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>Ações</TableCell>
             </TableRow>
@@ -45,7 +50,7 @@ export const StockTable = ({
           <TableBody>
             {visibleRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={8}>
                   <Box
                     sx={{
                       py: 6,
@@ -66,18 +71,38 @@ export const StockTable = ({
                       <StockStatusChip product={product} />
                     </Stack>
                   </TableCell>
+                  <TableCell>{getWarehouseLabel(product.warehouseId)}</TableCell>
                   <TableCell>{product.sku}</TableCell>
                   <TableCell>{product.ean}</TableCell>
                   <TableCell>{product.quantity}</TableCell>
+                  <TableCell>{product.transferPendingQty || 0}</TableCell>
                   <TableCell>{product.currentLocation || "-"}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => onEdit(product)}
-                    >
-                      Editar
-                    </Button>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => onEdit(product)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => onMoveLocation(product)}
+                        disabled={Number(product.quantity || 0) <= 0}
+                      >
+                        Trocar local
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => onTransferWarehouse(product)}
+                        disabled={Number(product.quantity || 0) <= 0}
+                      >
+                        Transferir estoque
+                      </Button>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))

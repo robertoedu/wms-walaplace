@@ -1,5 +1,6 @@
 import { mockReceivingNotes, mockStockLocations } from "./mockData.js";
 import { createMockStorage } from "./mockStorage.js";
+import { DEFAULT_WAREHOUSE_ID, getWarehouseLabel } from "../shared/utils/warehouseCatalog.js";
 import { stockMockRepository } from "./stockMockRepository.js";
 import {
   clone,
@@ -11,8 +12,8 @@ import {
   normalizeNote,
 } from "./wmsMockUtils.js";
 
-const STORAGE_KEY = "wms_mock_database_v6";
-const STORAGE_VERSION = 2;
+const STORAGE_KEY = "wms_mock_database_v7";
+const STORAGE_VERSION = 3;
 
 const createInitialDatabase = () => ({
   notes: mockReceivingNotes.map(normalizeNote),
@@ -57,6 +58,42 @@ export const wmsMockRepository = {
     return clone(note);
   },
 
+  createWarehouseTransferNote({ product, fromWarehouseId, toWarehouseId }) {
+    const quantity = Number(product.quantity || 0);
+    if (!quantity || quantity <= 0) throw new Error("Produto sem saldo para transferir.");
+
+    return this.saveNote({
+      key: `TRANSF-${Date.now()}`,
+      nfeNumber: "",
+      status: "completa",
+      observation: `Transferência do estoque ${getWarehouseLabel(fromWarehouseId)} para ${getWarehouseLabel(toWarehouseId)}.`,
+      createdAt: new Date().toISOString(),
+      finalizedAt: new Date().toISOString(),
+      supplier: "Transferência interna",
+      warehouseId: toWarehouseId,
+      warehouseName: getWarehouseLabel(toWarehouseId),
+      items: [
+        {
+          sku: product.sku,
+          description: product.description,
+          productName: product.description,
+          ean: product.ean || "",
+          quantity,
+          expectedQty: quantity,
+          issuedQty: quantity,
+          receivedQty: quantity,
+          warehouseId: toWarehouseId,
+          warehouseName: getWarehouseLabel(toWarehouseId),
+          addressedQty: 0,
+          pendingQty: quantity,
+          currentLocation: "",
+          locations: [],
+          status: "aguardando_enderecamento",
+        },
+      ],
+    });
+  },
+
   listAddressingItems() {
     return clone(flattenAddressingItems(readDatabase()));
   },
@@ -66,7 +103,7 @@ export const wmsMockRepository = {
     const items = flattenAddressingItems(database);
 
     return clone(
-      database.notes.map((note) => {
+      database.notes.filter((note) => note.status !== "prevista").map((note) => {
         const noteItems = items.filter((item) => item.noteId === note.id);
         const receivedQty = noteItems.reduce((total, item) => total + item.receivedQty, 0);
         const addressedQty = noteItems.reduce((total, item) => total + item.addressedQty, 0);
@@ -82,6 +119,8 @@ export const wmsMockRepository = {
           noteNumber: note.key,
           orderCode: note.orderCode || note.key,
           supplier: note.supplier,
+          warehouseId: note.warehouseId || noteItems[0]?.warehouseId || DEFAULT_WAREHOUSE_ID,
+          warehouseName: note.warehouseName || getWarehouseLabel(note.warehouseId || noteItems[0]?.warehouseId || DEFAULT_WAREHOUSE_ID),
           receivedAt: note.finalizedAt || note.createdAt,
           receivingStatus: note.status,
           receivingHasIssue: note.status === "divergente" || note.status === "incompleta",
@@ -331,7 +370,11 @@ export const wmsMockRepository = {
       sku: item.sku,
       quantity: numericQuantity,
       locationCode: storageCode,
-      productData: { ean: item.ean, description: item.productName || item.description },
+      productData: {
+        ean: item.ean,
+        description: item.productName || item.description,
+        warehouseId: item.warehouseId || note.warehouseId,
+      },
     });
     return clone({
       item: flattenAddressingItems(database).find((current) => current.id === itemId),

@@ -8,9 +8,22 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 
-export const ReceivingItemsTable = ({ items, onEditItem, onRemoveItem }) => {
+const getExpectedQty = (item) => Number(item.expectedQty ?? item.quantity ?? 0);
+const getIssuedQty = (item) => Number(item.issuedQty ?? item.quantity ?? 0);
+
+export const ReceivingItemsTable = ({
+  items,
+  mode = "manual",
+  onEditItem,
+  onRemoveItem,
+  onReceivedQtyChange,
+}) => {
+  const isConference = mode === "conference";
+  const canEditItems = Boolean(onEditItem || onRemoveItem);
+
   return (
     <Paper
       elevation={0}
@@ -19,16 +32,24 @@ export const ReceivingItemsTable = ({ items, onEditItem, onRemoveItem }) => {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: "bold" }}>SKU</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Produto</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Quantidade</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Ações</TableCell>
+            <TableCell sx={{ fontWeight: "bold" }}>Código</TableCell>
+            <TableCell sx={{ fontWeight: "bold" }}>Descrição</TableCell>
+            {isConference ? (
+              <>
+                <TableCell sx={{ fontWeight: "bold" }}>Qtd prevista</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Qtd emitida</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Qtd recebida</TableCell>
+              </>
+            ) : (
+              <TableCell sx={{ fontWeight: "bold" }}>Quantidade</TableCell>
+            )}
+            {canEditItems && <TableCell sx={{ fontWeight: "bold" }}>Ações</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4}>
+              <TableCell colSpan={isConference ? 5 : canEditItems ? 4 : 3}>
                 <Box
                   sx={{ py: 4, textAlign: "center", color: "text.secondary" }}
                 >
@@ -41,26 +62,51 @@ export const ReceivingItemsTable = ({ items, onEditItem, onRemoveItem }) => {
               <TableRow key={`${item.sku}-${index}`}>
                 <TableCell>{item.sku}</TableCell>
                 <TableCell>{item.description}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => onEditItem(index)}
-                    >
-                      Editar quantidade
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                      onClick={() => onRemoveItem(index)}
-                    >
-                      Remover
-                    </Button>
-                  </Stack>
-                </TableCell>
+                {isConference ? (
+                  <>
+                    <TableCell>{getExpectedQty(item)}</TableCell>
+                    <TableCell>{getIssuedQty(item)}</TableCell>
+                    <TableCell>
+                      <TextField
+                        type="number"
+                        size="small"
+                        value={item.receivedQty ?? ""}
+                        onChange={(event) =>
+                          onReceivedQtyChange?.(index, event.target.value)
+                        }
+                        slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                        sx={{ width: 130 }}
+                      />
+                    </TableCell>
+                  </>
+                ) : (
+                  <TableCell>{item.quantity}</TableCell>
+                )}
+                {canEditItems && (
+                  <TableCell>
+                    <Stack direction="row" spacing={1}>
+                      {onEditItem && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => onEditItem(index)}
+                        >
+                          Editar quantidade
+                        </Button>
+                      )}
+                      {onRemoveItem && (
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          onClick={() => onRemoveItem(index)}
+                        >
+                          Remover
+                        </Button>
+                      )}
+                    </Stack>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           )}

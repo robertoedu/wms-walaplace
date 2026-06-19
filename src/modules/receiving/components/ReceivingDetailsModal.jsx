@@ -5,14 +5,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
 } from "@mui/material";
 import { ReceivingStatusChip } from "./ReceivingStatusChip";
+import { ReceivingItemsTable } from "./ReceivingItemsTable";
 
 const formatDate = (value) =>
   new Intl.DateTimeFormat("pt-BR", {
@@ -20,7 +15,13 @@ const formatDate = (value) =>
     timeStyle: "short",
   }).format(new Date(value));
 
+const getNoteDate = (note) => note.issuedAt || note.emittedAt || note.createdAt;
+
 export const ReceivingDetailsModal = ({ open, note, onClose }) => {
+  const hasConferenceData = note?.items?.some(
+    (item) => item.expectedQty !== undefined || item.issuedQty !== undefined,
+  );
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Detalhes da nota</DialogTitle>
@@ -29,10 +30,15 @@ export const ReceivingDetailsModal = ({ open, note, onClose }) => {
           <Box sx={{ mt: 1 }}>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
               <Box>
-                <strong>Chave:</strong> {note.key}
+                <strong>Previsão:</strong> {note.key}
               </Box>
+              {note.nfeNumber && (
+                <Box>
+                  <strong>Número da nota:</strong> {note.nfeNumber}
+                </Box>
+              )}
               <Box>
-                <strong>Data:</strong> {formatDate(note.createdAt)}
+                <strong>Emissão:</strong> {formatDate(getNoteDate(note))}
               </Box>
               <Box>
                 <strong>Status:</strong>{" "}
@@ -43,35 +49,10 @@ export const ReceivingDetailsModal = ({ open, note, onClose }) => {
               </Box>
             </Box>
 
-            <Paper
-              elevation={0}
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                overflow: "hidden",
-              }}
-            >
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: "bold" }}>SKU</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Produto</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>
-                      Quantidade
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {note.items.map((item) => (
-                    <TableRow key={`${item.sku}-${item.description}`}>
-                      <TableCell>{item.sku}</TableCell>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
+            <ReceivingItemsTable
+              items={note.items}
+              mode={hasConferenceData ? "conference" : "manual"}
+            />
           </Box>
         )}
       </DialogContent>

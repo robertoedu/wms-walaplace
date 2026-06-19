@@ -10,12 +10,12 @@ export const ReceivingInvoiceInput = ({
 }) => (
   <Box>
     <Box sx={{ fontSize: "0.9rem", color: "text.secondary", mb: 1 }}>
-      Bipe a chave da nota
+      Digite o número da nota
     </Box>
     <TextField
       inputRef={inputRef}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 9))}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
@@ -24,10 +24,16 @@ export const ReceivingInvoiceInput = ({
       }}
       fullWidth
       autoComplete="off"
-      placeholder="Bipe ou digite a chave da nota"
-      label={title || "Chave da nota"}
+      placeholder="Ex: 123456789"
+      label={title || "Número da nota"}
       disabled={disabled}
-      inputProps={{ style: { fontSize: "1.1rem", padding: "17px" } }}
+      slotProps={{
+        htmlInput: {
+          inputMode: "numeric",
+          maxLength: 9,
+          style: { fontSize: "1.1rem", padding: "17px" },
+        },
+      }}
     />
   </Box>
 );

@@ -34,19 +34,18 @@ export const StockCreateDialog = ({
             fullWidth
           />
           <TextField
-            label="EAN"
+            label="EAN opcional"
             value={form.ean}
             onChange={(event) => onChange("ean", event.target.value)}
             fullWidth
           />
           <TextField
-            label="Localização"
+            label="Localização opcional"
             value={form.currentLocation}
             onChange={(event) =>
               onChange("currentLocation", event.target.value)
             }
             fullWidth
-            placeholder="Opcional"
           />
           <TextField
             label="Quantidade"

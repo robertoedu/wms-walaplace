@@ -34,4 +34,10 @@ export const mockPickingOrders = [
       { id: "PK-9", sku: "GAZEBO-3X3-AZ", ean: "7893000000010", productName: "Gazebo Dobravel 3x3 Azul", locationCode: "1000007", requiredQty: 1, pickedQty: 1, stockQty: 12, packagingType: "Caixa volumosa", suggestedZone: "Area Volumosos", status: "aguardando_embalamento", finalZone: "Area Volumosos" },
     ],
   },
+  {
+    id: "ORD-1006", marketplace: "Site", customer: "Cliente Transferencia", carrier: "Correios",
+    items: [
+      { id: "PK-11", sku: "FRITADEIRA-5L-PR", ean: "7894000000001", productName: "Fritadeira Eletrica 5L Preta", locationCode: "288-A1", requiredQty: 3, pickedQty: 0, stockQty: 18, packagingType: "Caixa media", suggestedZone: "Area Volumosos", status: "aguardando_separacao" },
+    ],
+  },
 ];

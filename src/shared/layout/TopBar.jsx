@@ -75,12 +75,16 @@ export const TopBar = ({ onToggleSidebar }) => {
     >
       <Stack
         direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ width: "100%", flexWrap: "wrap", placeContent: "space-between" }}
+        sx={{
+          width: "100%",
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          placeContent: "space-between",
+        }}
       >
         {/* Lado Esquerdo - Menu Hamburger + Logo */}
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
           <IconButton
             onClick={onToggleSidebar}
             sx={{

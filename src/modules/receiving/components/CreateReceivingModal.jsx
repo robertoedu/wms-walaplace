@@ -6,8 +6,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Snackbar,
   Stack,
+  TextField,
 } from "@mui/material";
 import { StockCreateDialog } from "../../stock/components/StockCreateDialog";
 import { FinishReceivingDialog } from "./FinishReceivingDialog";
@@ -17,6 +19,7 @@ import { ReceivingProductScanInput } from "./ReceivingProductScanInput";
 import { ReceivingQuantityInput } from "./ReceivingQuantityInput";
 import { ReceivingReviewPanel } from "./ReceivingReviewPanel";
 import { useCreateReceivingModal } from "../hooks/useCreateReceivingModal";
+import { WAREHOUSES } from "../../../shared/utils/warehouseCatalog";
 
 export const CreateReceivingModal = ({
   open,
@@ -33,6 +36,8 @@ export const CreateReceivingModal = ({
     setInvoiceKey,
     productScan,
     currentProduct,
+    warehouseId,
+    warehouseProducts,
     quantity,
     setQuantity,
     items,
@@ -40,12 +45,17 @@ export const CreateReceivingModal = ({
     setSnackbar,
     finishOpen,
     setFinishOpen,
+    handleOpenFinish,
     editingNoteId,
+    isConferenceMode,
+    conferenceStatus,
     stockCreateOpen,
     stockCreateForm,
     stockCreateError,
     showCreateProductButton,
+    handleWarehouseChange,
     handleProductScan,
+    handleProductSelect,
     handleInvoiceScan,
     handleProductScanSubmit,
     handleOpenStockCreate,
@@ -55,6 +65,7 @@ export const CreateReceivingModal = ({
     handleAddItem,
     handleEditItem,
     handleRemoveItem,
+    handleReceivedQtyChange,
     handleFinish,
   } = useCreateReceivingModal({
     open,
@@ -71,46 +82,70 @@ export const CreateReceivingModal = ({
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              select
+              label="Estoque"
+              value={warehouseId}
+              onChange={(event) => handleWarehouseChange(event.target.value)}
+              fullWidth
+              helperText="Os itens desta nota serão enviados para o estoque selecionado."
+            >
+              {WAREHOUSES.map((warehouse) => (
+                <MenuItem key={warehouse.id} value={warehouse.id}>
+                  {warehouse.label}
+                </MenuItem>
+              ))}
+            </TextField>
+
             <ReceivingInvoiceInput
               value={invoiceKey}
               onChange={setInvoiceKey}
               inputRef={refs.invoiceRef}
-              title={title}
-              disabled={Boolean(editingNoteId)}
+              title="Número da nota"
+              disabled={Boolean(editingNoteId) && !isConferenceMode}
               onSubmit={handleInvoiceScan}
             />
 
-            <ReceivingProductScanInput
-              value={productScan}
-              onChange={handleProductScan}
-              inputRef={refs.productRef}
-              showCreateButton={showCreateProductButton}
-              onCreateProduct={handleOpenStockCreate}
-              onSubmit={handleProductScanSubmit}
-            />
+            {!isConferenceMode && (
+              <>
+                <ReceivingProductScanInput
+                  value={productScan}
+                  options={warehouseProducts}
+                  selectedProduct={currentProduct}
+                  onChange={handleProductScan}
+                  onSelectProduct={handleProductSelect}
+                  inputRef={refs.productRef}
+                  showCreateButton={showCreateProductButton}
+                  onCreateProduct={handleOpenStockCreate}
+                  onSubmit={handleProductScanSubmit}
+                />
 
-            <ReceivingReviewPanel product={currentProduct} />
+                <ReceivingReviewPanel product={currentProduct} />
 
-            <ReceivingQuantityInput
-              value={quantity}
-              onChange={setQuantity}
-              inputRef={refs.quantityRef}
-              onSubmit={handleAddItem}
-            />
+                <ReceivingQuantityInput
+                  value={quantity}
+                  onChange={setQuantity}
+                  inputRef={refs.quantityRef}
+                  onSubmit={handleAddItem}
+                />
+              </>
+            )}
 
             <Stack direction="row" spacing={2}>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleAddItem}
-                sx={{ minWidth: 180 }}
-              >
-                Adicionar item
-              </Button>
+              {!isConferenceMode && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleAddItem}
+                  sx={{ minWidth: 180 }}
+                >
+                  Adicionar item
+                </Button>
+              )}
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => setFinishOpen(true)}
+                onClick={handleOpenFinish}
                 disabled={!items.length}
               >
                 Finalizar recebimento
@@ -123,8 +158,10 @@ export const CreateReceivingModal = ({
               </Box>
               <ReceivingItemsTable
                 items={items}
-                onEditItem={handleEditItem}
-                onRemoveItem={handleRemoveItem}
+                mode={isConferenceMode ? "conference" : "manual"}
+                onEditItem={isConferenceMode ? undefined : handleEditItem}
+                onRemoveItem={isConferenceMode ? undefined : handleRemoveItem}
+                onReceivedQtyChange={handleReceivedQtyChange}
               />
             </Box>
           </Stack>
@@ -140,6 +177,8 @@ export const CreateReceivingModal = ({
           key: invoiceKey,
           items,
           status: initialNote?.status,
+          computedStatus: conferenceStatus,
+          isConference: isConferenceMode,
           observation: initialNote?.observation,
         }}
         onClose={() => setFinishOpen(false)}

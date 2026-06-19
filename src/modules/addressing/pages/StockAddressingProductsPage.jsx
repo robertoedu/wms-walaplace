@@ -16,6 +16,7 @@ export const StockAddressingProductsPage = () => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("attention");
   const [period, setPeriod] = useState("all");
+  const [warehouseId, setWarehouseId] = useState("all");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -32,12 +33,15 @@ export const StockAddressingProductsPage = () => {
         status === "all" ||
         (status === "attention" && addressingItemNeedsAttention(item)) ||
         item.status === status;
+      const matchesWarehouse =
+        warehouseId === "all" ||
+        String(item.warehouseId || "742") === warehouseId;
       const matchesSearch = !term ||
         [item.orderCode, item.sku, item.ean, item.productName]
           .some((value) => String(value || "").toLowerCase().includes(term));
-      return matchesPeriod && matchesStatus && matchesSearch;
+      return matchesPeriod && matchesStatus && matchesWarehouse && matchesSearch;
     });
-  }, [items, period, search, status]);
+  }, [items, period, search, status, warehouseId]);
 
   const summary = useMemo(() => {
     const today = new Date().toDateString();
@@ -65,10 +69,11 @@ export const StockAddressingProductsPage = () => {
           <AddressingModeTabs />
         </Stack>
         <AddressingSummaryCards summary={summary} />
-        <AddressingFilters search={search} status={status} period={period}
+        <AddressingFilters search={search} status={status} period={period} warehouseId={warehouseId}
           onSearchChange={(value) => { setSearch(value); setPage(0); }}
           onStatusChange={(value) => { setStatus(value); setPage(0); }}
           onPeriodChange={(value) => { setPeriod(value); setPage(0); }}
+          onWarehouseChange={(value) => { setWarehouseId(value); setSelectedIds([]); setPage(0); }}
           onRefresh={() => setItems(addressingService.listItems())}
           onManualAddress={() => navigate("/enderecamento/operacao", { state: { returnTo: "/enderecamento/produtos" } })} />
 

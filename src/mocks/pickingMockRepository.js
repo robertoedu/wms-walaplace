@@ -1,10 +1,13 @@
 import { mockPickingOrders } from "./pickingMockData.js";
 import { createMockStorage } from "./mockStorage.js";
 import { stockMockRepository } from "./stockMockRepository.js";
+import { transferMockRepository } from "./transferMockRepository.js";
 import { wmsMockRepository } from "./wmsMockRepository.js";
+import { DEFAULT_WAREHOUSE_ID, SUPPORT_WAREHOUSE_ID } from "../shared/utils/warehouseCatalog.js";
 
 const STORAGE_KEY = "wms_picking_database_v5";
 const STORAGE_VERSION = 1;
+const PICKING_WAREHOUSE_ID = DEFAULT_WAREHOUSE_ID;
 const now = () => new Date().toISOString();
 const storage = createMockStorage({
   key: STORAGE_KEY,
@@ -55,15 +58,41 @@ const compareRoute = (first, second) => {
     Number(firstRoute.fallback ?? Number.MAX_SAFE_INTEGER) - Number(secondRoute.fallback ?? Number.MAX_SAFE_INTEGER)
   );
 };
-const flatten = (db) => db.orders.flatMap((order) => order.items.map((item) => {
-  const stock = stockMockRepository.findBySku(item.sku);
+const getWarehouseStock = (sku, warehouseId, locationCode = "") =>
+  stockMockRepository.findBySku(sku, warehouseId, locationCode) ||
+  stockMockRepository.findBySku(sku, warehouseId);
+const getPickingStock = (item) =>
+  getWarehouseStock(item.sku, PICKING_WAREHOUSE_ID, item.locationCode);
+const getSupportStock = (item) =>
+  getWarehouseStock(item.sku, SUPPORT_WAREHOUSE_ID, item.locationCode);
+const hasPendingSupportTransfer = (sku) =>
+  Boolean(transferMockRepository.findPendingTransfer({
+    sku,
+    fromWarehouseId: SUPPORT_WAREHOUSE_ID,
+    toWarehouseId: PICKING_WAREHOUSE_ID,
+  }));
+const getPickingItemView = (item) => {
+  const stock = getPickingStock(item);
+  const missingQty = Math.max(0, item.requiredQty - item.pickedQty);
+  const stockQty = Number(stock?.quantity ?? 0);
+  const status = stockQty < missingQty && hasPendingSupportTransfer(item.sku)
+    ? "aguardando_transferencia"
+    : item.status;
+
   return ({
-  ...item, stockQty: Number(stock?.quantity ?? 0), locationCode: stock?.currentLocation || item.locationCode,
-  orderId: order.id, marketplace: order.marketplace, customer: order.customer,
-  carrier: order.carrier, missingQty: Math.max(0, item.requiredQty - item.pickedQty),
-  orderItemCount: order.items.length, orderLocked: order.lockMode === "order",
+    ...item,
+    status,
+    stockQty,
+    locationCode: stock?.currentLocation || item.locationCode,
+    missingQty,
   });
-})).sort(compareRoute);
+};
+const flatten = (db) => db.orders.flatMap((order) => order.items.map((item) => ({
+  ...getPickingItemView(item),
+  orderId: order.id, marketplace: order.marketplace, customer: order.customer,
+  carrier: order.carrier,
+  orderItemCount: order.items.length, orderLocked: order.lockMode === "order",
+}))).sort(compareRoute);
 const listSessionItems = (db, sessionId) => {
   const session = db.sessions.find((current) => current.id === sessionId);
   if (!session) return [];
@@ -75,6 +104,39 @@ const findItem = (db, itemId) => {
   const order = db.orders.find((current) => current.items.some((item) => item.id === itemId));
   return { order, item: order?.items.find((current) => current.id === itemId) };
 };
+const createAutomaticSupportTransfers = (selected) => {
+  const created = [];
+
+  selected.forEach(({ item }) => {
+    const missingQty = Math.max(0, Number(item.requiredQty || 0) - Number(item.pickedQty || 0));
+    const pickingStock = getPickingStock(item);
+    const pickingQuantity = Number(pickingStock?.quantity || 0);
+    const neededQty = Math.max(0, missingQty - pickingQuantity);
+
+    if (neededQty <= 0 || hasPendingSupportTransfer(item.sku)) return;
+
+    const supportStock = getSupportStock(item);
+    const supportQuantity = Number(supportStock?.quantity || 0);
+    if (supportQuantity <= 0) return;
+
+    const transferQuantity = Math.min(neededQty, supportQuantity);
+    const transferredProduct = stockMockRepository.transferOut({
+      sku: item.sku,
+      warehouseId: SUPPORT_WAREHOUSE_ID,
+      productId: supportStock.id,
+      quantity: transferQuantity,
+    });
+    const transfer = transferMockRepository.createTransfer({
+      product: transferredProduct,
+      fromWarehouseId: SUPPORT_WAREHOUSE_ID,
+      toWarehouseId: PICKING_WAREHOUSE_ID,
+      quantity: transferQuantity,
+    });
+    created.push(transfer);
+  });
+
+  return created;
+};
 
 export const pickingMockRepository = {
   listItems: () => clone(flatten(read())),
@@ -82,12 +144,20 @@ export const pickingMockRepository = {
   listActiveSessions: () => clone(read().sessions.filter((session) =>
     ["em_separacao", "pausada"].includes(session.status),
   )),
-  listOrders: () => clone(read().orders.map((order) => ({
-    ...order, status: orderStatus(order), itemCount: order.items.length,
-    units: order.items.reduce((sum, item) => sum + item.requiredQty, 0),
-    pickedUnits: order.items.reduce((sum, item) => sum + item.pickedQty, 0),
-    highVolume: order.items.length >= 3 || order.items.reduce((sum, item) => sum + item.requiredQty, 0) >= 50,
-  }))),
+  listOrders: () => clone(read().orders.map((order) => {
+    const items = order.items.map(getPickingItemView);
+    const hasPendingTransfer = items.some((item) => item.status === "aguardando_transferencia");
+    const units = order.items.reduce((sum, item) => sum + item.requiredQty, 0);
+
+    return {
+      ...order,
+      status: hasPendingTransfer ? "aguardando_transferencia" : orderStatus(order),
+      itemCount: order.items.length,
+      units,
+      pickedUnits: order.items.reduce((sum, item) => sum + item.pickedQty, 0),
+      highVolume: order.items.length >= 3 || units >= 50,
+    };
+  })),
   listPackagingQueue: () => clone(read().packagingQueue),
   getSession: (id) => clone(read().sessions.find((session) => session.id === id) || null),
   createSession({ itemIds, mode, operator = "Operador mock", operatorId = null, operatorUsername = "" }) {
@@ -96,6 +166,13 @@ export const pickingMockRepository = {
     if (!uniqueIds.length) throw new Error("Selecione ao menos um item.");
     const selected = uniqueIds.map((id) => findItem(db, id)).sort((first, second) => compareRoute(first.item, second.item));
     if (selected.some(({ item }) => !item || !["aguardando_separacao", "faltou_item"].includes(item.status))) throw new Error("Um ou mais itens não estão disponíveis.");
+    const automaticTransfers = createAutomaticSupportTransfers(selected);
+    if (automaticTransfers.length) {
+      throw new Error(`${automaticTransfers.length} transferencia(s) criada(s) do estoque 288 para o 742. Confirme e endereco antes de iniciar a separacao.`);
+    }
+    if (selected.some(({ item }) => hasPendingSupportTransfer(item.sku))) {
+      throw new Error("Existe transferencia pendente para um ou mais itens selecionados. Confirme e endereco antes de iniciar a separacao.");
+    }
     const orderIds = [...new Set(selected.map(({ order }) => order.id))];
     if (selected.some(({ order }) => order.lockMode === "order")) throw new Error("Um pedido selecionado está bloqueado por outra sessão.");
     if (mode === "order") orderIds.forEach((id) => { db.orders.find((order) => order.id === id).lockMode = "order"; });
@@ -121,7 +198,7 @@ export const pickingMockRepository = {
     const db = read(); const session = db.sessions.find((current) => current.id === sessionId);
     const { item } = findItem(db, itemId); const qty = Number(quantity);
     if (!session || !session.itemIds.includes(itemId) || !item) throw new Error("Item não pertence à sessão.");
-    const stock = stockMockRepository.findBySku(item.sku);
+    const stock = getPickingStock(item);
     const expectedLocation = stock?.currentLocation || item.locationCode;
     item.stockQty = Number(stock?.quantity ?? 0);
     if (locationCode.trim().toLowerCase() !== expectedLocation.toLowerCase()) throw new Error(`Local incorreto. Dirija-se ao local ${expectedLocation}.`);
@@ -131,7 +208,12 @@ export const pickingMockRepository = {
     const missing = item.requiredQty - item.pickedQty;
     if (qty > missing) throw new Error("Quantidade excede o necessário.");
     if (qty > item.stockQty) throw new Error(`Saldo insuficiente. Disponível: ${item.stockQty}.`);
-    stockMockRepository.adjustQuantity({ sku: item.sku, quantity: -qty, locationCode: expectedLocation });
+    stockMockRepository.adjustQuantity({
+      sku: item.sku,
+      quantity: -qty,
+      locationCode: expectedLocation,
+      productData: { warehouseId: PICKING_WAREHOUSE_ID },
+    });
     item.pickedQty += qty;
     item.status = item.pickedQty === item.requiredQty ? "separado_completo" : "separado_parcial";
     const event = { id: `EV-${Date.now()}`, type: "retirada", itemId, quantity: qty, locationCode: expectedLocation, timestamp: now() };
@@ -167,7 +249,7 @@ export const pickingMockRepository = {
           sku: item.sku,
           quantity: pickedInSession,
           locationCode: item.locationCode,
-          productData: { ean: item.ean, productName: item.productName, packagingType: item.packagingType },
+          productData: { warehouseId: PICKING_WAREHOUSE_ID, ean: item.ean, productName: item.productName, packagingType: item.packagingType },
         });
       }
       item.pickedQty = initialPickedQty;

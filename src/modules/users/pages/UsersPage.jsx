@@ -48,15 +48,17 @@ export const UsersPage = () => {
   };
 
   const handleSave = (userData) => {
+    const savedUser = usersService.saveUser({
+      ...editingUser,
+      ...userData,
+      password: userData.password || editingUser?.password,
+    });
+
     if (editingUser) {
       setUsers((prev) =>
         prev.map((u) =>
           u.id === editingUser.id
-            ? {
-                ...u,
-                ...userData,
-                password: userData.password || u.password,
-              }
+            ? savedUser
             : u,
         ),
       );
@@ -66,12 +68,7 @@ export const UsersPage = () => {
         severity: "success",
       });
     } else {
-      const newUser = {
-        ...userData,
-        id: Math.max(...users.map((u) => u.id)) + 1,
-        createdAt: new Date().toISOString(),
-      };
-      setUsers((prev) => [...prev, newUser]);
+      setUsers((prev) => [...prev, savedUser]);
       setSnackbar({
         open: true,
         message: "Usuário criado com sucesso!",

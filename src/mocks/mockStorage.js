@@ -10,22 +10,25 @@ export const createMockStorage = ({
 
   const dispatchChange = (value) => {
     if (!eventName) return;
-    window.dispatchEvent(new CustomEvent(eventName, {
+    if (!globalThis.window?.dispatchEvent || typeof globalThis.CustomEvent !== "function") return;
+    globalThis.window.dispatchEvent(new globalThis.CustomEvent(eventName, {
       detail: { key, version, value: clone(value) },
     }));
   };
 
   const persist = (value) => {
     fallbackValue = clone(value);
-    localStorage.setItem(key, JSON.stringify(value));
+    globalThis.localStorage?.setItem(key, JSON.stringify(value));
   };
 
   const isVersionValid = (value) =>
     version === null || value?.version === version;
 
   const read = () => {
+    if (!globalThis.localStorage && fallbackValue) return clone(fallbackValue);
+
     try {
-      const saved = localStorage.getItem(key);
+      const saved = globalThis.localStorage?.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (isVersionValid(parsed)) {

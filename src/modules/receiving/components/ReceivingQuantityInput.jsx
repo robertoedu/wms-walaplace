@@ -15,7 +15,7 @@ export const ReceivingQuantityInput = ({ value, onChange, inputRef, onSubmit }) 
       }}
       fullWidth
       type="number"
-      inputProps={{ min: 1 }}
+      slotProps={{ htmlInput: { min: 1 } }}
       placeholder="Quantidade"
     />
   </Box>

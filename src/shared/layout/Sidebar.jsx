@@ -22,10 +22,12 @@ import PlaceIcon from "@mui/icons-material/Place";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 
 const iconMap = {
   receiving: <MoveToInboxIcon />,
   addressing: <PlaceIcon />,
+  transfers: <SwapHorizIcon />,
   picking: <ContentCutIcon />,
   packaging: <CategoryIcon />,
   manifest: <AssignmentIcon />,
@@ -71,7 +73,7 @@ export const Sidebar = ({ isExpanded }) => {
   const allModules = modulesService.listModules();
 
   const allowedModules = allModules.filter((module) =>
-    hasPermission(module.id),
+    module.route && hasPermission(module.id),
   );
 
   const operationalModules = allowedModules.filter(

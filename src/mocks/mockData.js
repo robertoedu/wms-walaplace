@@ -131,6 +131,32 @@ export const stockProducts = [
 // Notas mockadas do recebimento
 export const mockReceivingNotes = [
   {
+    id: 'rcv-prev-3001',
+    key: 'PREV-3001',
+    supplier: 'Fornecedor Central LTDA',
+    status: 'prevista',
+    observation: '',
+    issuedAt: '2026-06-17T10:00:00Z',
+    createdAt: '2026-06-17T10:00:00Z',
+    items: [
+      { sku: 'SKU-10001', description: 'Cadeira de Praia Alta Azul', ean: '7891000000011', expectedQty: 10, issuedQty: 10, quantity: 10 },
+      { sku: 'SKU-10002', description: 'Prato de Porcelana Branco 26 cm', ean: '7891000000028', expectedQty: 6, issuedQty: 6, quantity: 6 },
+    ],
+  },
+  {
+    id: 'rcv-prev-3002',
+    key: 'PREV-3002',
+    supplier: 'Moda Express Distribuidora',
+    status: 'prevista',
+    observation: '',
+    issuedAt: '2026-06-12T14:30:00Z',
+    createdAt: '2026-06-12T14:30:00Z',
+    items: [
+      { sku: 'SKU-10003', description: 'Xicara de Porcelana 200 ml', ean: '7891000000035', expectedQty: 12, issuedQty: 12, quantity: 12 },
+      { sku: 'SKU-10005', description: 'Gazebo Dobravel 3x3 Branco', ean: '7891000000059', expectedQty: 3, issuedQty: 3, quantity: 3 },
+    ],
+  },
+  {
     id: 'rcv-2001',
     key: 'NF-TESTE-END-001',
     supplier: 'Fornecedor Teste Enderecamento',
@@ -374,4 +400,12 @@ export const mockStockItems = [
   { id: 8,  sku: 'COOLER-50L-CZ',    ean: '7893000000008', description: 'Cooler Termico 50L Cinza',            currentLocation: '1000008', quantity: 18, packagingType: 'Caixa grande', status: 'aguardando_separacao' },
   { id: 9,  sku: 'GAZEBO-3X3-BR',    ean: '7893000000009', description: 'Gazebo Dobravel 3x3 Branco',          currentLocation: '1000007', quantity: 16, packagingType: 'Caixa volumosa', status: 'aguardando_separacao' },
   { id: 10, sku: 'GAZEBO-3X3-AZ',    ean: '7893000000010', description: 'Gazebo Dobravel 3x3 Azul',            currentLocation: '1000007', quantity: 12, packagingType: 'Caixa volumosa', status: 'aguardando_separacao' },
+];
+
+export const mockSecondaryStockItems = [
+  { id: '288-1', sku: 'FRITADEIRA-5L-PR', ean: '7894000000001', description: 'Fritadeira Eletrica 5L Preta', currentLocation: '288-A1', quantity: 18, packagingType: 'Caixa media', status: 'aguardando_separacao' },
+  { id: '288-2', sku: 'LIQUID-1200-INOX', ean: '7894000000002', description: 'Liquidificador 1200W Inox', currentLocation: '288-A2', quantity: 24, packagingType: 'Caixa media', status: 'aguardando_separacao' },
+  { id: '288-3', sku: 'PANELA-PRESS-6L', ean: '7894000000003', description: 'Panela de Pressao 6L Vermelha', currentLocation: '288-B1', quantity: 36, packagingType: 'Caixa reforcada', status: 'aguardando_separacao' },
+  { id: '288-4', sku: 'JOGO-TALHER-24', ean: '7894000000004', description: 'Jogo de Talheres Inox 24 Pecas', currentLocation: '288-B2', quantity: 50, packagingType: 'Caixa pequena', status: 'aguardando_separacao' },
+  { id: '288-5', sku: 'TOALHA-BANHO-AZ', ean: '7894000000005', description: 'Toalha de Banho Azul Algodao', currentLocation: '288-C1', quantity: 80, packagingType: 'Fardo', status: 'aguardando_separacao' },
 ];

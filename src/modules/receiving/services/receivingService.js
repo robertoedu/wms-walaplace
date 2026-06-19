@@ -1,8 +1,10 @@
 import { wmsMockRepository } from "../../../mocks/wmsMockRepository";
 import { stockMockRepository } from "../../../mocks/stockMockRepository";
+import { DEFAULT_WAREHOUSE_ID } from "../../../shared/utils/warehouseCatalog";
 
 const cloneProduct = (product) => ({
   ...product,
+  warehouseId: product.warehouseId || DEFAULT_WAREHOUSE_ID,
   searchKeys: [
     ...(product.searchKeys || []),
     product.sku,
@@ -16,6 +18,7 @@ const cloneProduct = (product) => ({
 
 const cloneNote = (note) => ({
   ...note,
+  warehouseId: note.warehouseId || DEFAULT_WAREHOUSE_ID,
   items: (note.items || []).map((item) => ({ ...item })),
 });
 

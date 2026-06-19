@@ -2,6 +2,8 @@ import { Box, Button, Paper, Stack } from "@mui/material";
 import { MainLayout } from "../../../shared/layout/MainLayout";
 import { StockCreateDialog } from "../components/StockCreateDialog";
 import { StockEditDialog } from "../components/StockEditDialog";
+import { StockMoveLocationDialog } from "../components/StockMoveLocationDialog";
+import { StockTransferDialog } from "../components/StockTransferDialog";
 import { StockFilters } from "../components/StockFilters";
 import { StockSummaryCards } from "../components/StockSummaryCards";
 import { StockTable } from "../components/StockTable";
@@ -12,6 +14,7 @@ export const StockPage = () => {
     filteredProducts,
     summary,
     search,
+    warehouseFilter,
     page,
     rowsPerPage,
     editingProduct,
@@ -20,15 +23,34 @@ export const StockPage = () => {
     createOpen,
     createForm,
     createError,
+    movingProduct,
+    moveLocation,
+    moveQuantity,
+    moveError,
+    transferringProduct,
+    transferWarehouseId,
+    transferQuantity,
+    transferError,
     feedback,
     setFeedback,
     setPage,
     setRowsPerPage,
     setEditQuantity,
+    setMoveLocation,
+    setMoveQuantity,
+    setTransferWarehouseId,
+    setTransferQuantity,
     handleSearchChange,
+    handleWarehouseFilterChange,
     handleOpenEdit,
     handleCloseEdit,
     handleSaveEdit,
+    handleOpenMoveLocation,
+    handleCloseMoveLocation,
+    handleSaveMoveLocation,
+    handleOpenTransfer,
+    handleCloseTransfer,
+    handleConfirmTransfer,
     handleOpenCreate,
     handleCloseCreate,
     handleCreateChange,
@@ -74,7 +96,12 @@ export const StockPage = () => {
 
         <StockSummaryCards summary={summary} />
 
-        <StockFilters search={search} onSearchChange={handleSearchChange} />
+        <StockFilters
+          search={search}
+          warehouseId={warehouseFilter}
+          onSearchChange={handleSearchChange}
+          onWarehouseChange={handleWarehouseFilterChange}
+        />
 
         <StockTable
           products={filteredProducts}
@@ -86,6 +113,8 @@ export const StockPage = () => {
             setPage(0);
           }}
           onEdit={handleOpenEdit}
+          onMoveLocation={handleOpenMoveLocation}
+          onTransferWarehouse={handleOpenTransfer}
         />
       </Stack>
 
@@ -106,6 +135,30 @@ export const StockPage = () => {
         onChange={handleCreateChange}
         onClose={handleCloseCreate}
         onSave={handleSaveCreate}
+      />
+
+      <StockMoveLocationDialog
+        open={Boolean(movingProduct)}
+        product={movingProduct}
+        location={moveLocation}
+        quantity={moveQuantity}
+        error={moveError}
+        onLocationChange={setMoveLocation}
+        onQuantityChange={setMoveQuantity}
+        onClose={handleCloseMoveLocation}
+        onSave={handleSaveMoveLocation}
+      />
+
+      <StockTransferDialog
+        open={Boolean(transferringProduct)}
+        product={transferringProduct}
+        targetWarehouseId={transferWarehouseId}
+        quantity={transferQuantity}
+        error={transferError}
+        onTargetWarehouseChange={setTransferWarehouseId}
+        onQuantityChange={setTransferQuantity}
+        onClose={handleCloseTransfer}
+        onConfirm={handleConfirmTransfer}
       />
 
       <Button

@@ -29,6 +29,11 @@ export const STATUS_CONFIG = {
     color: "warning",
     order: 60,
   },
+  aguardando_transferencia: {
+    label: "Aguardando Transferencia",
+    color: "warning",
+    order: 65,
+  },
   em_separacao: {
     label: "Em Separação",
     color: "info",
@@ -79,6 +84,11 @@ export const STATUS_CONFIG = {
     color: "success",
     order: 160,
   },
+  prevista: {
+    label: "Prevista",
+    color: "info",
+    order: 165,
+  },
   pausada: {
     label: "Pausada",
     color: "warning",
@@ -125,6 +135,7 @@ export const COMPLETED_FORWARD_STATUSES = new Set([
 
 export const PICKING_ATTENTION_STATUSES = new Set([
   "aguardando_separacao",
+  "aguardando_transferencia",
   "faltou_item",
   "divergente",
 ]);
@@ -177,6 +188,7 @@ export const pickingStatusFilterOptions = [
   { value: "all", label: "Todos" },
   ...[
     "aguardando_separacao",
+    "aguardando_transferencia",
     "em_separacao",
     "faltou_item",
     "aguardando_embalamento",
@@ -187,7 +199,7 @@ export const pickingStatusFilterOptions = [
 export const receivingStatusFilterOptions = [
   { value: "all", label: "Todos" },
   { value: "attention", label: "Precisa de atenção" },
-  ...["completa", "incompleta", "divergente"].map(toStatusOption),
+  ...["prevista", "completa", "incompleta", "divergente"].map(toStatusOption),
 ];
 
 export const receivingProblemStatusOptions = [

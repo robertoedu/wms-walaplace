@@ -1,5 +1,7 @@
 export const clone = (value) => JSON.parse(JSON.stringify(value));
 
+const DEFAULT_WAREHOUSE_ID = "742";
+
 export const getItemStatus = (item) => {
   if (item.status === "erro_endereco") return "erro_endereco";
   if (item.pendingQty === 0) return "aguardando_separacao";
@@ -10,14 +12,21 @@ export const getItemStatus = (item) => {
 export const normalizeNote = (note) => ({
   ...note,
   items: (note.items || []).map((item, index) => {
-    const receivedQty = Number(item.receivedQty ?? item.quantity ?? 0);
+    const isExpectedNote = note.status === "prevista";
+    const expectedQty = Number(item.expectedQty ?? item.quantity ?? 0);
+    const issuedQty = Number(item.issuedQty ?? item.quantity ?? 0);
+    const receivedQty = isExpectedNote && item.receivedQty === undefined
+      ? ""
+      : Number(item.receivedQty ?? item.quantity ?? 0);
     const addressedQty = Number(item.addressedQty ?? 0);
-    const pendingQty = Math.max(0, receivedQty - addressedQty);
+    const pendingQty = Math.max(0, Number(receivedQty || 0) - addressedQty);
 
     return {
       ...item,
       id: item.id || `${note.id}:${item.sku}:${index}`,
       productName: item.productName || item.description,
+      expectedQty,
+      issuedQty,
       receivedQty,
       addressedQty,
       pendingQty,
@@ -67,7 +76,7 @@ export const findLocationByCode = (database, code) => {
 };
 
 export const flattenAddressingItems = (database) =>
-  database.notes.flatMap((note) => {
+  database.notes.filter((note) => note.status !== "prevista").flatMap((note) => {
     const receivingHasIssue = note.status === "divergente" || note.status === "incompleta";
     const addressingBlocked = note.addressingBlocked === true;
 
@@ -78,6 +87,8 @@ export const flattenAddressingItems = (database) =>
       noteNumber: note.key,
       orderCode: note.orderCode || note.key,
       supplier: note.supplier,
+      warehouseId: item.warehouseId || note.warehouseId || DEFAULT_WAREHOUSE_ID,
+      warehouseName: item.warehouseName || note.warehouseName || "",
       receivedAt: note.finalizedAt || note.createdAt,
       receivingStatus: note.status,
       receivingHasIssue,

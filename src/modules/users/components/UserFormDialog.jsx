@@ -225,7 +225,9 @@ export const UserFormDialog = ({
                         >
                           {module.type === "operational"
                             ? "Operacional"
-                            : "Administrativo"}
+                            : module.type === "warehouse"
+                              ? "Estoque recebedor"
+                              : "Administrativo"}
                         </Box>
                       </Box>
                       {formData.permissions.includes(module.id) && (

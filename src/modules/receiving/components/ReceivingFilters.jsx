@@ -1,11 +1,29 @@
-import { Box, Button, MenuItem, Select, Stack, TextField } from "@mui/material";
+import { Box, Button, MenuItem, Stack, TextField } from "@mui/material";
 import { receivingStatusFilterOptions } from "../../../shared/utils/statusCatalog";
+
+const DateFilterField = ({ label, value, onChange }) => (
+  <Stack spacing={0.75}>
+    <Box sx={{ color: "text.secondary", fontSize: "0.8rem", fontWeight: 600 }}>
+      {label}
+    </Box>
+    <TextField
+      type="date"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      fullWidth
+    />
+  </Stack>
+);
 
 export const ReceivingFilters = ({
   search,
   status,
+  dateStart,
+  dateEnd,
   onSearchChange,
   onStatusChange,
+  onDateStartChange,
+  onDateEndChange,
   onRefresh,
   onAddNote,
 }) => {
@@ -19,37 +37,72 @@ export const ReceivingFilters = ({
         borderColor: "divider",
       }}
     >
-      <Stack
-        direction="row"
-        spacing={2}
-        useFlexGap
-        flexWrap="wrap"
-        alignItems="center"
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, minmax(0, 1fr))",
+            xl: "minmax(260px, 1fr) minmax(190px, 220px) repeat(2, minmax(170px, 190px)) auto",
+          },
+          gap: 2,
+          alignItems: "end",
+        }}
       >
         <TextField
           value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(event) => onSearchChange(event.target.value)}
           label="Busca livre"
-          placeholder="Chave da nota, produto, SKU ou EAN"
+          placeholder="Nota, produto, SKU ou EAN"
           fullWidth
-          sx={{ flex: "1 1 360px" }}
         />
-        <Select
+
+        <TextField
+          select
+          label="Status"
           value={status}
-          onChange={(e) => onStatusChange(e.target.value)}
-          displayEmpty
-          sx={{ minWidth: 180, flex: "0 0 220px" }}
+          onChange={(event) => onStatusChange(event.target.value)}
+          fullWidth
         >
           {receivingStatusFilterOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
           ))}
-        </Select>
-        <Stack direction="row" spacing={1} sx={{ flex: "0 0 auto" }}>
+        </TextField>
+
+        <DateFilterField
+          label="Emissão inicial"
+          value={dateStart}
+          onChange={onDateStartChange}
+        />
+
+        <DateFilterField
+          label="Emissão final"
+          value={dateEnd}
+          onChange={onDateEndChange}
+        />
+
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            gridColumn: { xs: "1", sm: "1 / -1", xl: "auto" },
+            justifySelf: { xs: "stretch", xl: "end" },
+            minWidth: 0,
+            "& .MuiButton-root": {
+              whiteSpace: "nowrap",
+            },
+          }}
+        >
           <Button
             variant="outlined"
             size="large"
             onClick={onRefresh}
-            sx={{ minWidth: 140 }}
+            sx={{
+              minWidth: { xs: 0, xl: 140 },
+              flex: { xs: 1, xl: "none" },
+            }}
           >
             Atualizar
           </Button>
@@ -57,12 +110,15 @@ export const ReceivingFilters = ({
             variant="contained"
             size="large"
             onClick={onAddNote}
-            sx={{ minWidth: 160 }}
+            sx={{
+              minWidth: { xs: 0, xl: 160 },
+              flex: { xs: 1, xl: "none" },
+            }}
           >
             Adicionar nota
           </Button>
         </Stack>
-      </Stack>
+      </Box>
     </Box>
   );
 };

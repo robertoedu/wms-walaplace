@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Chip,
-  LinearProgress,
   Paper,
   Snackbar,
   Stack,
@@ -29,14 +28,6 @@ import { LocationFormDialog } from "../components/LocationFormDialog";
 import { LocationItemsDialog } from "../components/LocationItemsDialog";
 import { RemoveLocationItemDialog } from "../components/RemoveLocationItemDialog";
 import { DeleteLocationDialog } from "../components/DeleteLocationDialog";
-
-const occupancyColor = (percentage) => {
-  if (percentage >= 90) return "error";
-  if (percentage >= 70) return "warning";
-  return "success";
-};
-
-const hasCapacityLimit = (location) => Number(location.capacity || 0) > 0;
 
 export const LocationsPage = () => {
   const [locations, setLocations] = useState(() => locationsService.list());
@@ -67,9 +58,7 @@ export const LocationsPage = () => {
 
   const summary = useMemo(() => ({
     total: locations.length,
-    available: locations.filter((location) => !hasCapacityLimit(location) || location.occupied < location.capacity).length,
-    critical: locations.filter((location) => hasCapacityLimit(location) && location.occupied / location.capacity >= 0.9).length,
-    freeCapacity: locations.reduce((total, location) => total + (hasCapacityLimit(location) ? Math.max(0, location.capacity - location.occupied) : 0), 0),
+    itemQuantity: locations.reduce((total, location) => total + Number(location.occupied || 0), 0),
   }), [locations]);
 
   const closeDialog = () => {
@@ -123,18 +112,16 @@ export const LocationsPage = () => {
             <LocationOnIcon sx={{ fontSize: 44, color: "primary.main" }} />
             <Box>
               <Typography variant="h4" fontWeight={800}>Cadastro de locais</Typography>
-              <Typography color="text.secondary">Gerencie os enderecos fisicos e sua capacidade de armazenamento.</Typography>
+              <Typography color="text.secondary">Gerencie os enderecos fisicos e a rota de separacao.</Typography>
             </Box>
           </Stack>
           <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={() => setOpen(true)}>Cadastrar local</Button>
         </Stack>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
           {[
             ["Locais cadastrados", summary.total, "primary"],
-            ["Com espaco disponivel", summary.available, "success"],
-            ["Ocupacao critica", summary.critical, "error"],
-            ["Capacidade livre", summary.freeCapacity, "info"],
+            ["Itens nos locais", summary.itemQuantity, "success"],
           ].map(([label, value, color]) => (
             <Paper key={label} elevation={0} sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
               <Typography variant="body2" color="text.secondary" fontWeight={600}>{label}</Typography>
@@ -155,26 +142,19 @@ export const LocationsPage = () => {
         </Paper>
 
         <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
-          <Table sx={{ minWidth: 950 }}>
+          <Table sx={{ minWidth: 980 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Codigo</TableCell>
                 <TableCell>Descricao fisica</TableCell>
                 <TableCell>Vinculo</TableCell>
-                <TableCell>Rota</TableCell>
-                <TableCell>Ocupacao</TableCell>
-                <TableCell>Capacidade maxima</TableCell>
-                <TableCell>Disponivel</TableCell>
-                <TableCell>Situacao</TableCell>
+                <TableCell sx={{ minWidth: 360 }}>Rota</TableCell>
+                <TableCell>Itens no local</TableCell>
                 <TableCell align="right">Acoes</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredLocations.map((location) => {
-                const capacityLimited = hasCapacityLimit(location);
-                const percentage = capacityLimited ? Math.min(100, Math.round((location.occupied / location.capacity) * 100)) : 0;
-                const color = occupancyColor(percentage);
-                const available = capacityLimited ? Math.max(0, location.capacity - location.occupied) : null;
                 return (
                   <TableRow key={location.id} hover>
                     <TableCell><Typography fontWeight={800}>{location.code}</Typography></TableCell>
@@ -186,7 +166,7 @@ export const LocationsPage = () => {
                         <Typography variant="body2" color="text.secondary">Local principal</Typography>
                       )}
                     </TableCell>
-                    <TableCell sx={{ minWidth: 220 }}>
+                    <TableCell sx={{ minWidth: 360, maxWidth: 520 }}>
                       <Stack spacing={0.25}>
                         <Typography variant="body2" fontWeight={700}>
                           Seq. {location.pickingSequence ?? "-"}
@@ -196,24 +176,10 @@ export const LocationsPage = () => {
                         </Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell sx={{ minWidth: 190 }}>
-                      {capacityLimited ? (
-                        <Stack spacing={0.75}>
-                          <Typography variant="body2">{location.occupied} de {location.capacity} ({percentage}%)</Typography>
-                          <LinearProgress variant="determinate" value={percentage} color={color} sx={{ height: 8, borderRadius: 4 }} />
-                        </Stack>
-                      ) : (
-                        <Typography variant="body2">{location.occupied} item(ns), sem limite definido</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>{capacityLimited ? location.capacity : "Sem limite"}</TableCell>
-                    <TableCell>{capacityLimited ? available : "Livre"}</TableCell>
                     <TableCell>
-                      <Chip
-                        label={capacityLimited && available === 0 ? "Lotado" : capacityLimited && percentage >= 90 ? "Critico" : "Disponivel"}
-                        color={capacityLimited && (available === 0 || percentage >= 90) ? "error" : color}
-                        size="small"
-                      />
+                      <Typography variant="body2" fontWeight={700}>
+                        {Number(location.occupied || 0)}
+                      </Typography>
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -229,7 +195,7 @@ export const LocationsPage = () => {
               })}
               {!filteredLocations.length && (
                 <TableRow>
-                  <TableCell colSpan={9}><Alert severity="info">Nenhum local encontrado.</Alert></TableCell>
+                  <TableCell colSpan={6}><Alert severity="info">Nenhum local encontrado.</Alert></TableCell>
                 </TableRow>
               )}
             </TableBody>

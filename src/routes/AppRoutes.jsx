@@ -5,6 +5,7 @@ import { LoginPage } from "../auth/pages/LoginPage";
 import { HomePage } from "../modules/dashboard/pages/HomePage";
 import { UsersPage } from "../modules/users/pages/UsersPage";
 import { ReceivingNotesPage } from "../modules/receiving/pages/ReceivingNotesPage";
+import { TransfersPage } from "../modules/transfers/pages/TransfersPage";
 import { StockAddressingNotesPage } from "../modules/addressing/pages/StockAddressingNotesPage";
 import { StockAddressingPage } from "../modules/addressing/pages/StockAddressingPage";
 import { StockAddressingProductsPage } from "../modules/addressing/pages/StockAddressingProductsPage";
@@ -77,6 +78,15 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute requiredPermission="addressing">
               <StockAddressingProductsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/transferencias"
+          element={
+            <ProtectedRoute requiredPermission="transfers">
+              <TransfersPage />
             </ProtectedRoute>
           }
         />
